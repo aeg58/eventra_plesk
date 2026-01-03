@@ -1,0 +1,5 @@
+# Bu klasör veritabanı yedeklerini içerir
+# latest.sql dosyası her zaman güncel yedeği içerir ve commit edilir
+# Tarihli yedekler (eventra_db_*.sql) commit edilmez
+
+

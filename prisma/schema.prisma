@@ -1,0 +1,718 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Reservation {
+  id                       String                     @id
+  rezervasyonNo            String?                    @unique(map: "rezervasyonNo") @db.VarChar(20)
+  customerId               String
+  officeId                 String?
+  salonId                  String?
+  organizasyonGrupId       String?
+  yetkili                  String?
+  sozlesmeTarihi           DateTime?
+  rezervasyonTarihi        DateTime?
+  zamanDilimi              String?
+  durum                    String?
+  programId                String?
+  paketId                  String?
+  davetiSayisi             Int?
+  fiyatKisiBasi            Decimal?                   @db.Decimal(12, 2)
+  sozlesmeFiyati           Decimal?                   @db.Decimal(12, 2)
+  iskonto                  Decimal?                   @db.Decimal(12, 2)
+  iskontoYuzde             Boolean?                   @default(false)
+  kdvOrani                 Decimal?                   @default(0.00) @db.Decimal(5, 2)
+  ozelTeklif               Boolean?                   @default(false)
+  ozelNotlar               String?                    @db.Text
+  ekstraNotu               String?                    @db.Text
+  kaynakId                 String?
+  sozlesmeKontrati         String?
+  kontratSahibiAdSoyad     String?
+  kontratSahibiTelefon     String?                    @db.VarChar(50)
+  kontratSahibiTc          String?                    @db.VarChar(20)
+  kontratAdresi            String?                    @db.Text
+  faturaIstiyorum          Boolean?                   @default(false)
+  faturaUnvani             String?
+  faturaVergiDairesi       String?
+  faturaVergiNo            String?                    @db.VarChar(50)
+  faturaAdresi             String?                    @db.Text
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime                   @default(now()) @updatedAt
+  Payments                 Payments[]
+  Customer                 Customer                   @relation(fields: [customerId], references: [id], map: "fk_reservation_customer")
+  ReservationDynamicValues ReservationDynamicValues[]
+  ReservationParticipants  ReservationParticipants[]
+
+  @@index([customerId], map: "idx_customer")
+  @@index([durum], map: "idx_durum")
+  @@index([officeId], map: "idx_office")
+  @@index([organizasyonGrupId], map: "idx_organizasyon")
+  @@index([rezervasyonTarihi], map: "idx_rezervasyon_tarihi")
+  @@index([salonId], map: "idx_salon")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model CashBox {
+  id                                                            String               @id
+  kasaAdi                                                       String
+  tur                                                           String               @db.VarChar(50)
+  iban                                                          String?              @db.VarChar(50)
+  dovizCinsi                                                    String               @default("TL") @db.VarChar(10)
+  acilisBakiyesi                                                Decimal              @default(0.00) @db.Decimal(12, 2)
+  isActive                                                      Boolean              @default(true)
+  createdAt                                                     DateTime             @default(now())
+  updatedAt                                                     DateTime             @default(now())
+  CashBoxTransaction_CashBoxTransaction_cashBoxIdToCashBox      CashBoxTransaction[] @relation("CashBoxTransaction_cashBoxIdToCashBox")
+  CashBoxTransaction_CashBoxTransaction_hedefCashBoxIdToCashBox CashBoxTransaction[] @relation("CashBoxTransaction_hedefCashBoxIdToCashBox")
+  Payments                                                      Payments[]
+
+  @@index([isActive], map: "idx_isActive")
+  @@index([tur], map: "idx_tur")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model CashBoxTransaction {
+  id                                                 String   @id
+  cashBoxId                                          String
+  reservationId                                      String?  @db.VarChar(255)
+  hedefCashBoxId                                     String?
+  islemTuru                                          String   @db.VarChar(50)
+  tutar                                              Decimal  @db.Decimal(12, 2)
+  aciklama                                           String?  @db.Text
+  tarih                                              DateTime
+  yeniBakiye                                         Decimal  @db.Decimal(12, 2)
+  createdAt                                          DateTime @default(now())
+  CashBox_CashBoxTransaction_cashBoxIdToCashBox      CashBox  @relation("CashBoxTransaction_cashBoxIdToCashBox", fields: [cashBoxId], references: [id], onDelete: Cascade, map: "fk_transaction_cashbox")
+  CashBox_CashBoxTransaction_hedefCashBoxIdToCashBox CashBox? @relation("CashBoxTransaction_hedefCashBoxIdToCashBox", fields: [hedefCashBoxId], references: [id], map: "fk_transaction_hedef_cashbox")
+
+  @@index([hedefCashBoxId], map: "fk_transaction_hedef_cashbox")
+  @@index([cashBoxId], map: "idx_cashBox")
+  @@index([islemTuru], map: "idx_islemTuru")
+  @@index([reservationId], map: "idx_reservationId")
+  @@index([tarih], map: "idx_tarih")
+}
+
+model Customer {
+  id          String        @id
+  adSoyad     String
+  telefon     String?       @db.VarChar(50)
+  email       String?
+  adres       String?       @db.Text
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now())
+  Reservation Reservation[]
+
+  @@index([email], map: "idx_email")
+  @@index([telefon], map: "idx_telefon")
+}
+
+model FormFieldMaster {
+  id                    String                  @id
+  sectionId             String
+  label                 String
+  fieldKey              String
+  type                  FormFieldMaster_type
+  placeholder           String?
+  helper                String?                 @db.VarChar(500)
+  dataSource            String?
+  sortOrder             Int                     @default(0)
+  isRequired            Boolean                 @default(false)
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @default(dbgenerated("('0000-00-00 00:00:00.000')"))
+  FormSectionMaster     FormSectionMaster       @relation(fields: [sectionId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_field_section")
+  FormFieldOptionMaster FormFieldOptionMaster[]
+  FormFieldVisibility   FormFieldVisibility[]
+
+  @@index([fieldKey], map: "idx_fieldKey")
+  @@index([sectionId, sortOrder], map: "idx_section_sort")
+}
+
+model FormFieldOptionMaster {
+  id              String          @id
+  fieldId         String
+  label           String
+  value           String
+  sortOrder       Int             @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @default(dbgenerated("('0000-00-00 00:00:00.000')"))
+  FormFieldMaster FormFieldMaster @relation(fields: [fieldId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_option_field")
+
+  @@index([fieldId, sortOrder], map: "idx_field_sort")
+}
+
+model FormFieldVisibility {
+  id               String           @id
+  groupId          String
+  fieldId          String
+  isActive         Boolean          @default(true)
+  sortOrder        Int              @default(0)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @default(dbgenerated("('0000-00-00 00:00:00.000')"))
+  FormFieldMaster  FormFieldMaster  @relation(fields: [fieldId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_field_visibility_field")
+  OrganizasyonGrup OrganizasyonGrup @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_field_visibility_group")
+
+  @@unique([groupId, fieldId], map: "uk_group_field")
+  @@index([fieldId], map: "fk_field_visibility_field")
+  @@index([groupId, sortOrder], map: "idx_group_sort")
+}
+
+model FormSectionMaster {
+  id                    String                  @id
+  title                 String
+  description           String?                 @db.VarChar(500)
+  globalKey             String                  @unique(map: "globalKey")
+  sortOrder             Int                     @default(0)
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @default(dbgenerated("('0000-00-00 00:00:00.000')"))
+  FormFieldMaster       FormFieldMaster[]
+  FormSectionVisibility FormSectionVisibility[]
+
+  @@index([sortOrder], map: "idx_sortOrder")
+}
+
+model FormSectionVisibility {
+  id                String            @id
+  groupId           String
+  sectionId         String
+  isActive          Boolean           @default(true)
+  sortOrder         Int               @default(0)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @default(dbgenerated("('0000-00-00 00:00:00.000')"))
+  OrganizasyonGrup  OrganizasyonGrup  @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_visibility_group")
+  FormSectionMaster FormSectionMaster @relation(fields: [sectionId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_visibility_section")
+
+  @@unique([groupId, sectionId], map: "uk_group_section")
+  @@index([sectionId], map: "fk_visibility_section")
+  @@index([groupId, sortOrder], map: "idx_group_sort")
+}
+
+model GenelBirim {
+  id                  String                @id
+  name                String
+  code                String?               @unique(map: "MeasurementUnit_code_key")
+  slug                String                @unique(map: "MeasurementUnit_slug_key")
+  description         String?
+  category            String?
+  symbol              String?
+  sortOrder           Int                   @default(0)
+  isDefault           Boolean               @default(false)
+  isActive            Boolean               @default(true)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime
+  MenuEkstra          MenuEkstra[]
+  OrganizasyonUrunler OrganizasyonUrunler[]
+}
+
+model Izinler {
+  id          String        @id @db.VarChar(255)
+  modulId     String        @db.VarChar(255)
+  action      String        @db.VarChar(50)
+  name        String        @db.VarChar(255)
+  key         String        @unique(map: "key") @db.VarChar(255)
+  description String?       @db.Text
+  sortOrder   Int?          @default(0)
+  isActive    Boolean?      @default(true)
+  createdAt   DateTime?     @default(now()) @db.DateTime(0)
+  updatedAt   DateTime?     @default(now()) @db.DateTime(0)
+  Moduller    Moduller      @relation(fields: [modulId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "Izinler_ibfk_1")
+  RolIzinleri RolIzinleri[]
+
+  @@unique([modulId, action], map: "unique_modul_action")
+}
+
+model Kullan_c_lar {
+  id                      String                    @id
+  email                   String                    @unique(map: "User_email_key")
+  name                    String?
+  passwordHash            String
+  role                    String                    @default("admin")
+  roleId                  String?                   @db.VarChar(255)
+  isActive                Boolean                   @default(true)
+  lastLoginAt             DateTime?
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime
+  enforcePasswordChange   Boolean                   @default(false)
+  firstName               String?
+  isLocked                Boolean                   @default(false)
+  lastName                String?
+  officeId                String?
+  phone                   String?
+  username                String?
+  Ofisler                 Ofisler?                  @relation(fields: [officeId], references: [id], map: "User_officeId_fkey")
+  Roller                  Roller?                   @relation(fields: [roleId], references: [id], onUpdate: Restrict, map: "fk_user_role")
+  SifreSifirlamaTokenlari SifreSifirlamaTokenlari[]
+
+  @@index([officeId], map: "User_officeId_fkey")
+  @@index([roleId], map: "fk_user_role")
+  @@map("Kullanıcılar")
+}
+
+model MenuEkstra {
+  id          String      @id
+  name        String
+  description String?
+  price       Decimal?    @db.Decimal(12, 2)
+  sortOrder   Int         @default(0)
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime
+  unitId      String?
+  GenelBirim  GenelBirim? @relation(fields: [unitId], references: [id], map: "ExtraService_unitId_fkey")
+
+  @@index([unitId], map: "ExtraService_unitId_fkey")
+}
+
+model OrganizasyonPaketler {
+  id               String            @id
+  name             String
+  slug             String            @unique(map: "MenuPackage_slug_key")
+  description      String?
+  groupId          String?
+  programId        String?
+  price            Decimal?          @db.Decimal(12, 2)
+  perPersonPrice   Decimal?          @db.Decimal(12, 2)
+  minGuests        Int?
+  maxGuests        Int?
+  details          String?           @db.LongText
+  isActive         Boolean           @default(true)
+  sortOrder        Int               @default(0)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime
+  officeId         String?
+  Ofisler          Ofisler?          @relation(fields: [officeId], references: [id], map: "MenuPackage_officeId_fkey")
+  OrganizasyonGrup OrganizasyonGrup? @relation(fields: [groupId], references: [id])
+
+  @@index([officeId], map: "MenuPackage_officeId_fkey")
+  @@index([programId], map: "MenuPackage_programId_fkey")
+  @@index([groupId])
+  @@map("OrganizasyonPaketler")
+}
+
+model Moduller {
+  id             String     @id @db.VarChar(255)
+  name           String     @db.VarChar(255)
+  slug           String     @unique(map: "slug") @db.VarChar(255)
+  description    String?    @db.Text
+  icon           String?    @db.VarChar(100)
+  parentId       String?    @db.VarChar(255)
+  sortOrder      Int?       @default(0)
+  isActive       Boolean?   @default(true)
+  createdAt      DateTime?  @default(now()) @db.DateTime(0)
+  updatedAt      DateTime?  @default(now()) @db.DateTime(0)
+  Izinler        Izinler[]
+  Moduller       Moduller?  @relation("ModullerToModuller", fields: [parentId], references: [id], onUpdate: Restrict, map: "Moduller_ibfk_1")
+  other_Moduller Moduller[] @relation("ModullerToModuller")
+
+  @@index([parentId], map: "parentId")
+}
+
+model Ofisler {
+  id                   String                 @id
+  name                 String
+  code                 String?                @unique(map: "Office_code_key")
+  phone                String?
+  email                String?
+  city                 String?
+  district             String?
+  addressLine1         String?
+  addressLine2         String?
+  capacity             Int?
+  timezone             String?                @default("Europe/Istanbul")
+  color                String?                @default("#2563eb")
+  settings             String?                @db.LongText
+  isActive             Boolean                @default(true)
+  sortOrder            Int                    @default(0)
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime
+  Kullan_c_lar         Kullan_c_lar[]
+  OrganizasyonPaketler OrganizasyonPaketler[]
+  Subeler              Subeler[]
+  ProgramSaatSlotlar_  ProgramSaatSlotlar_[]
+}
+
+model OrganizasyonGrup {
+  id                      String                    @id
+  name                    String
+  slug                    String                    @unique(map: "MenuGroup_slug_key")
+  description             String?
+  sortOrder               Int                       @default(0)
+  isActive                Boolean                   @default(true)
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime
+  FormFieldVisibility     FormFieldVisibility[]
+  FormSectionVisibility   FormSectionVisibility[]
+  OrganizasyonPaketler    OrganizasyonPaketler[]
+  OrganizasyonUrunler     OrganizasyonUrunler[]
+  OrganizasyonUrunGruplari OrganizasyonUrunGruplari[]
+}
+
+model OrganizasyonUrunler {
+  id                       String                     @id
+  groupId                  String
+  name                     String
+  slug                     String                     @unique(map: "MenuItem_slug_key")
+  description              String?
+  price                    Decimal?                   @db.Decimal(12, 2)
+  unitId                   String?
+  sortOrder                Int                        @default(0)
+  isActive                 Boolean                    @default(true)
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime
+  OrganizasyonGrup          OrganizasyonGrup           @relation(fields: [groupId], references: [id], map: "MenuItem_groupId_fkey")
+  GenelBirim                GenelBirim?               @relation(fields: [unitId], references: [id], map: "MenuItem_unitId_fkey")
+  OrganizasyonUrunGruplari  OrganizasyonUrunGruplari[]
+
+  @@index([groupId], map: "MenuItem_groupId_fkey")
+  @@index([unitId], map: "MenuItem_unitId_fkey")
+}
+
+model OrganizasyonUrunGruplari {
+  id                 String           @id @default(cuid())
+  organizasyonUrunId String
+  organizasyonGrupId String
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  OrganizasyonUrunler OrganizasyonUrunler @relation(fields: [organizasyonUrunId], references: [id], onDelete: Cascade)
+  OrganizasyonGrup   OrganizasyonGrup  @relation(fields: [organizasyonGrupId], references: [id], onDelete: Cascade)
+
+  @@unique([organizasyonUrunId, organizasyonGrupId], map: "uk_urun_grup")
+  @@index([organizasyonUrunId])
+  @@index([organizasyonGrupId])
+  @@map("OrganizasyonUrunGruplari")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model Payments {
+  id            String      @id
+  reservationId String
+  cashBoxId     String?
+  amount        Decimal     @db.Decimal(12, 2)
+  paymentDate   DateTime
+  paymentMethod String?     @db.VarChar(50)
+  notes         String?     @db.Text
+  isCancelled   Boolean?    @default(false)
+  cancelledAt   DateTime?
+  cancelledBy   String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @default(now())
+  CashBox       CashBox?    @relation(fields: [cashBoxId], references: [id], map: "fk_payment_cashbox")
+  Reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade, map: "fk_payment_reservation")
+
+  @@index([cashBoxId], map: "idx_cashbox")
+  @@index([paymentDate], map: "idx_payment_date")
+  @@index([reservationId], map: "idx_reservation")
+}
+
+model ProgramSaatSlotlar_ {
+  id          String   @id
+  name        String
+  slug        String   @unique(map: "ReservationTimeSlot_slug_key")
+  description String?
+  startTime   String?
+  endTime     String?
+  officeId    String?
+  salonId     String?
+  capacity    Int?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  Ofisler     Ofisler? @relation(fields: [officeId], references: [id], map: "TimeSlot_officeId_fkey")
+  Subeler     Subeler? @relation(fields: [salonId], references: [id], map: "TimeSlot_salonId_fkey")
+
+  @@index([officeId], map: "TimeSlot_officeId_fkey")
+  @@index([salonId], map: "TimeSlot_salonId_fkey")
+  @@map("ProgramSaatSlotları")
+}
+
+model ReservationDynamicValues {
+  id            String      @id
+  reservationId String
+  fieldKey      String
+  fieldValue    String?     @db.Text
+  createdAt     DateTime    @default(now())
+  Reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade, map: "fk_dynamic_reservation")
+
+  @@unique([reservationId, fieldKey], map: "uk_reservation_field")
+  @@index([fieldKey], map: "idx_field_key")
+  @@index([reservationId], map: "idx_reservation")
+}
+
+model ReservationParticipants {
+  id             String      @id
+  reservationId  String
+  participantKey String      @db.VarChar(100)
+  adSoyad        String?
+  telefon        String?     @db.VarChar(50)
+  memleket       String?
+  extraJson      String?     @db.LongText
+  createdAt      DateTime    @default(now())
+  Reservation    Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade, map: "fk_participants_reservation")
+
+  @@index([participantKey], map: "idx_participant_key")
+  @@index([reservationId], map: "idx_reservation")
+}
+
+model RezervasyonAktivite {
+  id                  String    @id @db.VarChar(255)
+  rezervasyonId       String    @db.VarChar(255)
+  activityType        String    @db.VarChar(100)
+  activityTitle       String    @db.VarChar(255)
+  activityDescription String?   @db.Text
+  userId              String?   @db.VarChar(255)
+  userName            String?   @db.VarChar(255)
+  oldValue            String?   @db.Text
+  newValue            String?   @db.Text
+  createdAt           DateTime? @default(now()) @db.DateTime(0)
+  updatedAt           DateTime? @default(now()) @db.DateTime(0)
+
+  @@index([createdAt], map: "idx_created")
+  @@index([rezervasyonId], map: "idx_rezervasyon")
+}
+
+model RezervasyonDurum {
+  id          String   @id
+  name        String   @unique
+  slug        String   @unique
+  description String?  @db.Text
+  color       String?  @default("#6b7280")
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+}
+
+model RezervasyonKaynak {
+  id          String   @id
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  icon        String?
+  color       String?  @default("#6b7280")
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+}
+
+model RolIzinleri {
+  id        String    @id @db.VarChar(255)
+  roleId    String    @db.VarChar(255)
+  izinId    String    @db.VarChar(255)
+  granted   Boolean?  @default(true)
+  createdAt DateTime? @default(now()) @db.DateTime(0)
+  updatedAt DateTime? @default(now()) @db.DateTime(0)
+  Roller    Roller    @relation(fields: [roleId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "RolIzinleri_ibfk_1")
+  Izinler   Izinler   @relation(fields: [izinId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "RolIzinleri_ibfk_2")
+
+  @@unique([roleId, izinId], map: "unique_role_izin")
+  @@index([izinId], map: "izinId")
+}
+
+model Roller {
+  id           String         @id @db.VarChar(255)
+  name         String         @unique(map: "name") @db.VarChar(255)
+  description  String?        @db.Text
+  isDefault    Boolean?       @default(false)
+  isActive     Boolean?       @default(true)
+  createdAt    DateTime?      @default(now()) @db.DateTime(0)
+  updatedAt    DateTime?      @default(now()) @db.DateTime(0)
+  Kullan_c_lar Kullan_c_lar[]
+  RolIzinleri  RolIzinleri[]
+}
+
+model Sehirler {
+  id        String   @id
+  name      String   @unique(map: "City_name_key")
+  slug      String   @unique(map: "City_slug_key")
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+}
+
+model SifreSifirlamaTokenlari {
+  id           String       @id
+  userId       String
+  token        String       @unique @db.VarChar(255)
+  expiresAt    DateTime     @db.DateTime(0)
+  used         Boolean      @default(false)
+  createdAt    DateTime     @default(now()) @db.DateTime(0)
+  Kullan_c_lar Kullan_c_lar @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+}
+
+model SozlesmeSablon {
+  id        String   @id
+  title     String
+  content   String   @db.Text
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+}
+
+model Subeler {
+  id                  String                @id
+  name                String
+  slug                String                @unique(map: "Venue_slug_key")
+  officeId            String?
+  description         String?
+  address             String?
+  phone               String?
+  email               String?
+  capacity            Int?
+  floor               Int?
+  area                Int?
+  location            String?
+  features            String?               @db.LongText
+  gallery             String?               @db.LongText
+  sortOrder           Int                   @default(0)
+  isActive            Boolean               @default(true)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime
+  Ofisler             Ofisler?              @relation(fields: [officeId], references: [id], map: "Venue_officeId_fkey")
+  ProgramSaatSlotlar_ ProgramSaatSlotlar_[]
+
+  @@index([officeId], map: "Venue_officeId_fkey")
+}
+
+model TahsilatFisiSablon {
+  id            String    @id @db.VarChar(255)
+  title         String    @db.VarChar(255)
+  content       String    @db.Text
+  headerContent String?   @db.Text
+  footerContent String?   @db.Text
+  isDefault     Boolean?  @default(false)
+  isActive      Boolean?  @default(true)
+  createdAt     DateTime? @default(now()) @db.DateTime(0)
+  updatedAt     DateTime? @default(now()) @db.DateTime(0)
+}
+
+model EmailSettings {
+  id                    String    @id @default(cuid())
+  host                  String    @db.VarChar(255)
+  port                  Int       @default(25)
+  secure                Boolean   @default(false)
+  user                  String    @db.VarChar(255)
+  password              String?   @db.VarChar(255)
+  fromEmail             String    @db.VarChar(255)
+  fromName              String    @default("Eventra") @db.VarChar(255)
+  useSendmail           Boolean   @default(false)
+  isActive              Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([id])
+}
+
+model SMSSettings {
+  id                    String    @id @default(cuid())
+  provider              String    @default("manual") @db.VarChar(50) // manual, twilio, netgsm, etc.
+  apiKey                String?   @db.VarChar(255)
+  apiSecret             String?   @db.VarChar(255)
+  senderNumber          String?   @db.VarChar(50)
+  senderName            String?   @db.VarChar(100)
+  isActive              Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([id])
+}
+
+model HazirMesajlar {
+  id                    String    @id @default(cuid())
+  baslik                String    @db.VarChar(255)
+  icerik                String    @db.Text
+  tip                   String    @db.VarChar(50) // email, sms, both
+  kategori              String?   @db.VarChar(100)
+  degiskenler           String?   @db.Text // JSON array of available variables
+  isActive              Boolean   @default(true)
+  sortOrder             Int       @default(0)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([tip])
+  @@index([kategori])
+}
+
+enum FormFieldMaster_type {
+  text
+  number
+  phone
+  date
+  select
+  radio
+  checkbox
+  textarea
+  city
+}
+
+model GeneralSettings {
+  id                    String    @id @default(cuid())
+  companyName            String    @db.VarChar(255)
+  companyEmail           String    @db.VarChar(255)
+  companyPhone           String?   @db.VarChar(50)
+  companyAddress         String?   @db.Text
+  taxNumber              String?   @db.VarChar(50)
+  taxOffice              String?   @db.VarChar(255)
+  companyLogo            String?   @db.LongText
+  defaultLanguage        String    @default("tr") @db.VarChar(10)
+  defaultTimezone        String    @default("Europe/Istanbul") @db.VarChar(50)
+  dateFormat             String    @default("DD/MM/YYYY") @db.VarChar(20)
+  timeFormat             String    @default("24") @db.VarChar(10)
+  currency               String    @default("TRY") @db.VarChar(10)
+  currencySymbol         String    @default("₺") @db.VarChar(10)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  @@unique([id])
+}
+
+model CalendarSettings {
+  id                    String    @id @default(cuid())
+  defaultView           String    @default("month") @db.VarChar(20)
+  weekStartDay          String    @default("monday") @db.VarChar(20)
+  showWeekends          Boolean   @default(true)
+  businessHoursStart    String    @default("09:00") @db.VarChar(10)
+  businessHoursEnd      String    @default("18:00") @db.VarChar(10)
+  slotDuration          Int       @default(30)
+  slotLabelInterval     Int       @default(60)
+  firstDayOfWeek        Int       @default(1)
+  showTimeSlots         Boolean   @default(true)
+  defaultDateRange      Int       @default(30)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([id])
+}
+
+model ThemeSettings {
+  id                    String    @id @default(cuid())
+  primaryColor          String    @default("#2563eb") @db.VarChar(20)
+  secondaryColor        String    @default("#64748b") @db.VarChar(20)
+  logoUrl               String?   @db.LongText
+  faviconUrl            String?   @db.LongText
+  darkMode              Boolean   @default(false)
+  fontFamily            String    @default("Inter") @db.VarChar(50)
+  fontSize              String    @default("medium") @db.VarChar(20)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([id])
+}
+
+model ReservationSettings {
+  id                    String    @id @default(cuid())
+  kaporaYuzdesi         Decimal   @default(20.00) @db.Decimal(5, 2)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([id])
+}

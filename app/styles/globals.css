@@ -1,0 +1,300 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+  --primary-color: #2563eb;
+  --secondary-color: #64748b;
+  --font-family: 'Aptos', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --font-size-base: 16px;
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: 'Aptos', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Print Styles */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide non-essential elements */
+  header,
+  aside,
+  button,
+  .no-print,
+  input,
+  select,
+  label,
+  nav {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Reset flex layout for print */
+  body,
+  body * {
+    overflow: visible !important;
+  }
+
+  body > div,
+  body > div > div,
+  body > div > div > div {
+    display: block !important;
+    height: auto !important;
+    max-height: none !important;
+    position: static !important;
+  }
+
+  main {
+    display: block !important;
+    margin: 0 !important;
+    padding: 10mm 12mm !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  main > div {
+    max-width: none !important;
+  }
+
+  /* Hide stats, filters, view mode selector */
+  main > div > div:nth-child(2),
+  main > div > div:nth-child(3),
+  main > div > div:nth-child(4) {
+    display: none !important;
+  }
+
+  /* Page title */
+  main > div > div:first-child h2 {
+    color: #000 !important;
+    font-size: 18pt !important;
+    margin: 0 0 2mm 0 !important;
+    font-weight: bold !important;
+  }
+
+  main > div > div:first-child p {
+    color: #333 !important;
+    font-size: 10pt !important;
+    margin: 0 0 8mm 0 !important;
+  }
+
+  /* Force calendar grid to display properly */
+  main > div > div:last-child {
+    display: block !important;
+  }
+
+  /* Print anonymous mode - hide customer names */
+  body.print-anonymous .calendar-grid [class*="border"] > div:not(:first-child) {
+    color: transparent !important;
+    text-shadow: 0 0 8px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  body.print-anonymous .calendar-grid [class*="border"] > div:not(:first-child) span,
+  body.print-anonymous .calendar-grid [class*="border"] > div:not(:first-child) div {
+    color: transparent !important;
+    text-shadow: 0 0 8px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  /* Print için genel stiller */
+  @media print {
+    body.print-anonymous * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+  }
+
+  .calendar-grid {
+    display: grid !important;
+    grid-template-columns: repeat(7, 1fr) !important;
+    grid-template-rows: auto auto !important;
+    gap: 2mm !important;
+    width: 100% !important;
+    page-break-inside: avoid !important;
+  }
+
+  .calendar-grid > div {
+    display: flex !important;
+    flex-direction: column !important;
+    border: 1.5pt solid #000 !important;
+    background: white !important;
+    padding: 2mm !important;
+    min-height: 30mm !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Date headers */
+  .calendar-grid > div > div:first-child {
+    font-weight: bold !important;
+    color: #000 !important;
+    border-bottom: 1pt solid #333 !important;
+    padding-bottom: 1mm !important;
+    margin-bottom: 2mm !important;
+    font-size: 9pt !important;
+  }
+
+  /* Event container */
+  .calendar-grid > div > div:nth-child(2) {
+    display: block !important;
+    flex-grow: 1 !important;
+  }
+
+  /* Event cards */
+  .calendar-grid [data-event-type] {
+    display: block !important;
+    border-left: 2pt solid #000 !important;
+    background: #e8e8e8 !important;
+    padding: 1.5mm !important;
+    margin: 1mm 0 !important;
+    font-size: 8pt !important;
+    color: #000 !important;
+  }
+
+  .calendar-grid [data-event-type] > div:first-child {
+    display: flex !important;
+    align-items: center !important;
+    gap: 1mm !important;
+    font-weight: 600 !important;
+    margin-bottom: 0.5mm !important;
+  }
+
+  .calendar-grid [data-event-type] > div:last-child {
+    display: block !important;
+    font-size: 7pt !important;
+    color: #333 !important;
+  }
+
+  .calendar-grid [data-event-type] * {
+    color: #000 !important;
+  }
+
+  /* Hide SVG icons */
+  .calendar-grid svg {
+    display: none !important;
+  }
+
+  /* Anonymous printing */
+  body.print-anonymous [data-event-name] {
+    display: none !important;
+  }
+
+  body.print-anonymous [data-event-type]::before {
+    content: "• Rezerve Edildi" !important;
+    display: block !important;
+    font-size: 8pt !important;
+    color: #000 !important;
+    font-weight: 600 !important;
+  }
+
+  /* Empty calendar printing - hide all reservations */
+  body.print-empty-calendar .calendar-grid [data-reservation-card] {
+    display: none !important;
+  }
+
+  body.print-empty-calendar .calendar-grid > div > div:nth-child(2) {
+    display: none !important;
+  }
+
+  body.print-empty-calendar .calendar-grid > div > div:nth-child(2) > * {
+    display: none !important;
+  }
+
+  body.print-empty-calendar .calendar-grid > div > button {
+    display: none !important;
+  }
+
+  @page {
+    margin: 8mm;
+    size: A4 landscape;
+  }
+}
+
+/* Rezervasyon detay sayfası için özel print stilleri - Portrait */
+@media print {
+  body:has([data-reservation-detail]) {
+    @page {
+      size: A4 portrait;
+      margin: 1cm;
+    }
+  }
+
+  [data-reservation-detail] .no-print {
+    display: none !important;
+  }
+
+  [data-reservation-detail] .grid {
+    display: block !important;
+  }
+
+  [data-reservation-detail] .lg\\:col-span-2 {
+    width: 100% !important;
+  }
+
+  [data-reservation-detail] .max-w-5xl {
+    max-width: 100% !important;
+  }
+}
+
